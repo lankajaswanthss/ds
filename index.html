@@ -8,26 +8,60 @@
     <p id="status">Waiting for location...</p>
     <p id="location"></p>
     <script>
-      var worker = new Worker('worker.js');
+      // Ask the user for permission to track their location
+      function askPermission() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+            // Display the user's current location
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+            var locationText = 'Latitude: ' + latitude + ', Longitude: ' + longitude;
+            document.getElementById('location').textContent = locationText;
 
-      // Listen for messages from the worker
-      worker.addEventListener('message', function(event) {
-        if (event.data.type === 'location') {
-          // Update the user's location
-          var latitude = event.data.latitude;
-          var longitude = event.data.longitude;
-          var locationText = 'Latitude: ' + latitude + ', Longitude: ' + longitude;
-          document.getElementById('location').textContent = locationText;
-        } else if (event.data.type === 'error') {
-          // Log the error message
-          var errorMessage = 'Error: ' + event.data.message;
+            // Start tracking location in the background
+            trackLocation();
+          }, function(error) {
+            // Display an error message
+            var errorMessage = 'Error: ' + error.message;
+            console.log(errorMessage);
+            document.getElementById('status').textContent = errorMessage;
+          });
+        } else {
+          // Geolocation API is not supported
+          var errorMessage = 'Geolocation API is not supported';
           console.log(errorMessage);
           document.getElementById('status').textContent = errorMessage;
         }
-      });
+      }
 
-      // Send a message to the worker to start tracking location
-      worker.postMessage({type: 'start'});
+      // Start tracking location in the background using AJAX requests
+      function trackLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(function(position) {
+            // Send the location to the server using an AJAX request
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+            var data = {latitude: latitude, longitude: longitude};
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'update_location.php');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(data));
+          }, function(error) {
+            // Display an error message
+            var errorMessage = 'Error: ' + error.message;
+            console.log(errorMessage);
+            document.getElementById('status').textContent = errorMessage;
+          });
+        } else {
+          // Geolocation API is not supported
+          var errorMessage = 'Geolocation API is not supported';
+          console.log(errorMessage);
+          document.getElementById('status').textContent = errorMessage;
+        }
+      }
+
+      // Ask the user for permission to track their location
+      askPermission();
     </script>
   </body>
 </html>
