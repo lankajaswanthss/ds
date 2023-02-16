@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Background Location Tracking</title>
+  </head>
+  <body>
+    <div id="location">Waiting for location...</div>
+    <script>
+      // Create a new web worker
+      var worker = new Worker('worker.js');
+
+      // Ask the user for permission to access their location
+      navigator.permissions.query({name:'geolocation'}).then(function(result) {
+          if (result.state === 'granted') {
+              // Send a message to the worker to start tracking location
+              worker.postMessage({type: 'start'});
+          } else if (result.state === 'prompt') {
+              // Ask the user for permission to access their location
+              navigator.geolocation.getCurrentPosition(function(position) {
+                  // Send a message to the worker to start tracking location
+                  worker.postMessage({type: 'start'});
+              });
+          } else {
+              // The user has denied permission to access their location
+              console.log('Permission denied');
+          }
+      });
+
+      // Listen for location updates from the worker
+      worker.onmessage = function(event) {
+          // Update the location on the page
+          var locationDiv = document.getElementById('location');
+          locationDiv.innerHTML = 'Latitude: ' + event.data.lat + '<br>Longitude: ' + event.data.lng;
+      };
+    </script>
+  </body>
+</html>
