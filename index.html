@@ -1,37 +1,33 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Background Location Tracking</title>
+    <meta charset="utf-8">
+    <title>Geolocation API Demo</title>
   </head>
   <body>
-    <div id="location">Waiting for location...</div>
+    <p id="status">Waiting for location...</p>
+    <p id="location"></p>
     <script>
-      // Create a new web worker
       var worker = new Worker('worker.js');
 
-      // Ask the user for permission to access their location
-      navigator.permissions.query({name:'geolocation'}).then(function(result) {
-          if (result.state === 'granted') {
-              // Send a message to the worker to start tracking location
-              worker.postMessage({type: 'start'});
-          } else if (result.state === 'prompt') {
-              // Ask the user for permission to access their location
-              navigator.geolocation.getCurrentPosition(function(position) {
-                  // Send a message to the worker to start tracking location
-                  worker.postMessage({type: 'start'});
-              });
-          } else {
-              // The user has denied permission to access their location
-              console.log('Permission denied');
-          }
+      // Listen for messages from the worker
+      worker.addEventListener('message', function(event) {
+        if (event.data.type === 'location') {
+          // Update the user's location
+          var latitude = event.data.latitude;
+          var longitude = event.data.longitude;
+          var locationText = 'Latitude: ' + latitude + ', Longitude: ' + longitude;
+          document.getElementById('location').textContent = locationText;
+        } else if (event.data.type === 'error') {
+          // Log the error message
+          var errorMessage = 'Error: ' + event.data.message;
+          console.log(errorMessage);
+          document.getElementById('status').textContent = errorMessage;
+        }
       });
 
-      // Listen for location updates from the worker
-      worker.onmessage = function(event) {
-          // Update the location on the page
-          var locationDiv = document.getElementById('location');
-          locationDiv.innerHTML = 'Latitude: ' + event.data.lat + '<br>Longitude: ' + event.data.lng;
-      };
+      // Send a message to the worker to start tracking location
+      worker.postMessage({type: 'start'});
     </script>
   </body>
 </html>
