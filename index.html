@@ -1,40 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Background Location Tracking</title>
+  <title>Location Tracking and Page Refresh Example</title>
+  <script type="text/javascript">
+    // Create a new Web Worker to refresh the page in the background
+    const worker = new Worker('refresh-worker.js');
+    
+    // Start the worker and pass it the page refresh interval
+    worker.postMessage({interval: 5000});
+    
+    // Listen for messages from the worker
+    worker.onmessage = function(e) {
+      console.log('Worker message:', e.data);
+    };
+    
+    // Function to get the user's location and upload it to ThingSpeak
+    function uploadLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          var latitude = position.coords.latitude;
+          var longitude = position.coords.longitude;
+          var apiKey = "EF2FUH19N5P8VP3I";
+          var url = "https://api.thingspeak.com/update?api_key=" + apiKey + "&field1=" + latitude + "&field2=" + longitude;
+
+          var xhttp = new XMLHttpRequest();
+          xhttp.open("POST", url, true);
+          xhttp.send();
+        });
+      } else {
+        alert("Geolocation is not supported by this browser.");
+      }
+    }
+    
+    // Call the uploadLocation function every 10 seconds
+    setInterval(uploadLocation, 10000);
+  </script>
 </head>
 <body>
-  <p>Click the button to start tracking your location in the background.</p>
-  <button id="startButton">Start Tracking</button>
-  <button id="stopButton" disabled>Stop Tracking</button>
-  <script>
-    let worker = null;
-    const startButton = document.getElementById("startButton");
-    const stopButton = document.getElementById("stopButton");
-
-    // create web worker to track location in background
-    function startWorker() {
-      if (worker === null) {
-        worker = new Worker("worker.js");
-        startButton.disabled = true;
-        stopButton.disabled = false;
-      }
-    }
-
-    // stop the web worker
-    function stopWorker() {
-      if (worker !== null) {
-        worker.terminate();
-        worker = null;
-        startButton.disabled = false;
-        stopButton.disabled = true;
-      }
-    }
-
-    // start/stop tracking when buttons are clicked
-    startButton.addEventListener("click", startWorker);
-    stopButton.addEventListener("click", stopWorker);
-  </script>
+  <h1>Location Tracking and Page Refresh Example</h1>
+  <p>This page will automatically track your location and upload it to ThingSpeak every 10 seconds. The page will also be refreshed in the background every 5 seconds.</p>
 </body>
 </html>
