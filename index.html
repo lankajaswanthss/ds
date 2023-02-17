@@ -1,36 +1,86 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Background Location Tracking</title>
-  </head>
-  <body>
-    <p id="status">Waiting for location...</p>
-    <p id="location"></p>
-    <script>
-      var worker = new Worker('worker.js');
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BUS1</title>
+<script>
+function showPosition() {
+    if(navigator.geolocation) {
+        navigator.geolocation.watchPosition(showMap, showError);
+    } else {
+        alert("Sorry, your browser does not support HTML5 geolocation.");
+    }
+}
+ var lat;
+ var long;
+// Define callback function for successful attempt
+function showMap(position) {
 
-      // Listen for messages from the worker
-      worker.addEventListener('message', function(event) {
-        if (event.data.type === 'update') {
-          // Update the user's location
-          var latitude = event.data.latitude;
-          var longitude = event.data.longitude;
-          var locationText = 'Latitude: ' + latitude + ', Longitude: ' + longitude;
-          document.getElementById('location').textContent = locationText;
-
-          // Log the update status
-          console.log('Update successful: ' + locationText);
-        } else if (event.data.type === 'error') {
-          // Log the error message
-          var errorMessage = 'Error: ' + event.data.message;
-          console.log(errorMessage);
-          document.getElementById('status').textContent = errorMessage;
+    // Get location data
+    lat = position.coords.latitude;
+    long = position.coords.longitude;
+    fetch('https://api.thingspeak.com/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'api_key=' + '3UIYRI7DJR2557GL' + '&field1=' + lat + '&field2=' + long 
+})
+.then(response => response.text())
+.then(data => console.log(data)) 
+     // Check position has been changed or not before doing anything
+        if(prevLat != position.coords.latitude || prevLong != position.coords.longitude){
+            var  prevLat = position.coords.latitude;
+            var  prevLong = position.coords.longitude; 
+            // Get current position
+            var positionInfo = "Your current position is (" + "Latitude: " + position.coords.latitude + ", " + "Longitude: " + position.coords.longitude + ")";
+            document.getElementById("result").innerHTML = positionInfo;      
         }
-      });
+        embedMap.innerHTML = '<iframe width="1000px" height="500px margin-top: 10px border-radius: 10px; " src="https://maps.google.com/maps?q='+ lat +','+long+'&amp;z=15&amp;output=embed"></iframe>';
+}
+// Define callback function for failed attempt
+function showError(error) {
+    if(error.code == 1) {
+        result.innerHTML = "You've decided not to share your position, but it's OK. We won't ask you again.";
+    } else if(error.code == 2) {
+        result.innerHTML = "The network is down or the positioning service can't be reached.";
+    } else if(error.code == 3) {
+        result.innerHTML = "The attempt timed out before it could get the location data.";
+    } else {
+        result.innerHTML = "Geolocation failed due to unknown error.";
+    }
+}   
 
-      // Send a message to the worker to start tracking location
-      worker.postMessage({type: 'start'});
+
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div style="width: 100%;">
+        <img src="banner.jpg" alt="logo" class="banner" width="100%">
+      </div>
+    <button type="button" onclick="showPosition();" class="button-28">Show My Position on Google Map</button>
+    <br>
+    <div id="embedMap" >
+        <!--Google map will be embedded here-->
+    </div>
+    <p id="result"></p>
+    <button class="button-28"><a href="index.html">Select other bus</a></button>
+    <button id="pip-button">Open in Picture-in-Picture</button>
+<iframe id="my-frame" src="https://lankajaswanthss.github.io/driver"/></iframe>
+
+    <script>
+
+const pipButton = document.getElementById('pip-button');
+const myFrame = document.getElementById('my-frame');
+
+pipButton.addEventListener('click', () => {
+  if (document.pictureInPictureElement === myFrame) {
+    document.exitPictureInPicture();
+  } else {
+    myFrame.requestPictureInPicture();
+  }
+});
+const worker = new Worker("worker.js");
+
     </script>
-  </body>
+</body>
 </html>
