@@ -1,4 +1,4 @@
 // refresh the page every 10 seconds
 setInterval(function() {
-  location.reload();
+  showPosition.reload();
 }, 10000);
